@@ -15,7 +15,12 @@ export function HistoryCard({}: IHistoryCardProps) {
 			justifyContent="space-between"
 		>
 			<VStack mr={5} flex={1}>
-				<Heading color="white" fontSize="sm" textTransform="capitalize">
+				<Heading
+					color="white"
+					fontSize="sm"
+					textTransform="capitalize"
+					fontFamily="heading"
+				>
 					Costas
 				</Heading>
 				<Text color="gray.100" fontSize="lg" numberOfLines={1}>

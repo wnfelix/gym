@@ -9,14 +9,50 @@ import {
 	Skeleton,
 	Text,
 	Heading,
+	useToast,
 } from "native-base";
 import { useState } from "react";
-import { TouchableOpacity } from "react-native";
+import { Alert, TouchableOpacity } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
 
 const PHOTO_SIZE = 33;
 
 export function Profile() {
 	const [photoIsLoading, setPhotoIsLoading] = useState(false);
+	const [userPhoto, setUserPhoto] = useState("https://github.com/wnfelix.png");
+	const toast = useToast();
+
+	async function handleUserPhotoSelect() {
+		setPhotoIsLoading(true);
+
+		try {
+			const selectedPhoto = await ImagePicker.launchImageLibraryAsync({
+				mediaTypes: ImagePicker.MediaTypeOptions.Images,
+				quality: 1,
+				aspect: [4, 4],
+				allowsEditing: true,
+			});
+
+			if (!selectedPhoto.canceled) {
+				const asset = selectedPhoto.assets[0];
+				const photoInfo = await FileSystem.getInfoAsync(asset.uri);
+
+				if (photoInfo.size && photoInfo.size / 1024 / 1024 > 1)
+					return toast.show({
+						title: "Essa imagem é muito grande, o limite é de 3mb.",
+						placement: "top",
+						bgColor: "red.500",
+					});
+
+				setUserPhoto(asset.uri);
+			}
+		} catch (error) {
+			console.log(error);
+		} finally {
+			setPhotoIsLoading(false);
+		}
+	}
 
 	return (
 		<VStack flex={1}>
@@ -33,12 +69,12 @@ export function Profile() {
 						/>
 					) : (
 						<UserPhoto
-							source={{ uri: "https://github.com/wnfelix.png" }}
+							source={{ uri: userPhoto }}
 							size={PHOTO_SIZE}
 							alt="Foto do usuário"
 						/>
 					)}
-					<TouchableOpacity>
+					<TouchableOpacity onPress={handleUserPhotoSelect}>
 						<Text
 							color="green.500"
 							fontWeight="bold"
@@ -53,7 +89,7 @@ export function Profile() {
 					<Input placeholder="E-mail" bg="gray.600" isDisabled />
 				</Center>
 				<VStack px={10} mt={12} mb={9}>
-					<Heading color="gray.200" fontSize="md" mb={2}>
+					<Heading color="gray.200" fontSize="md" mb={2} fontFamily="heading">
 						Alterar senha
 					</Heading>
 					<Input bg="gray.600" placeholder="Senha antiga" secureTextEntry />
