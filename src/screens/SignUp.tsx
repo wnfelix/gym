@@ -1,4 +1,12 @@
-import { VStack, Image, Text, Center, Heading, ScrollView } from "native-base";
+import {
+	VStack,
+	Image,
+	Text,
+	Center,
+	Heading,
+	ScrollView,
+	useToast,
+} from "native-base";
 
 import LogoSvg from "@assets/logo.svg";
 import BackgroundImg from "@assets/background.png";
@@ -8,6 +16,11 @@ import { useNavigation } from "@react-navigation/native";
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { api } from "@services/api";
+import axios from "axios";
+import { AppError } from "@utils/AppError";
+import { useState } from "react";
+import { useAuth } from "@hooks/useAuth";
 
 interface IFormDataProps {
 	name: string;
@@ -32,6 +45,9 @@ const signUpSchema = yup.object({
 
 export function SignUp() {
 	const navigator = useNavigation();
+	const toast = useToast();
+	const [isLoading, setIsLoading] = useState(false);
+	const { signIn } = useAuth();
 
 	const {
 		control,
@@ -45,7 +61,29 @@ export function SignUp() {
 		navigator.goBack();
 	}
 
-	function handleSignUp(data: IFormDataProps) {}
+	async function handleSignUp({ name, email, password }: IFormDataProps) {
+		try {
+			setIsLoading(true);
+			await api.post("/users", { name, email, password });
+			await signIn(email, password);
+		} catch (error) {
+			setIsLoading(false);
+			const isAppError = error instanceof AppError;
+			const title = isAppError
+				? error.message
+				: "Não foi possível criar a conta tente novamente mais tarde";
+
+			toast.show({
+				title: title,
+				placement: "top",
+				bgColor: "red.500",
+			});
+
+			if (axios.isAxiosError(error)) {
+				console.log("axios error", error.response?.data.message);
+			}
+		}
+	}
 
 	return (
 		<ScrollView
@@ -127,6 +165,7 @@ export function SignUp() {
 					<Button
 						title="Criar e acessar"
 						onPress={handleSubmit(handleSignUp)}
+						isLoading={isLoading}
 					/>
 				</Center>
 				<Button
